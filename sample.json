@@ -1,0 +1,73 @@
+{
+  "status": "ok",
+  "body": {
+    "devices": [
+      {
+        "_id": "70:ee:50:00:00:01",
+        "station_name": "Hjemme (Stue)",
+        "type": "NAMain",
+        "module_name": "Stue",
+        "wifi_status": 50,
+        "reachable": true,
+        "dashboard_data": {
+          "time_utc": 1791461790,
+          "Temperature": 21.4,
+          "CO2": 1120,
+          "Humidity": 42,
+          "Noise": 38,
+          "Pressure": 1012.6,
+          "min_temp": 20.1,
+          "max_temp": 22.3,
+          "temp_trend": "stable",
+          "pressure_trend": "down"
+        },
+        "modules": [
+          {
+            "_id": "02:00:00:00:00:01",
+            "type": "NAModule1",
+            "module_name": "Ute",
+            "battery_percent": 15,
+            "reachable": true,
+            "dashboard_data": {
+              "time_utc": 1791461790,
+              "Temperature": 7.3,
+              "Humidity": 81,
+              "min_temp": 4.2,
+              "max_temp": 11.8,
+              "temp_trend": "down"
+            }
+          },
+          {
+            "_id": "03:00:00:00:00:01",
+            "type": "NAModule4",
+            "module_name": "Soverom",
+            "battery_percent": 80,
+            "reachable": true,
+            "dashboard_data": {
+              "time_utc": 1791461790,
+              "Temperature": 18.9,
+              "CO2": 640,
+              "Humidity": 47,
+              "min_temp": 18.1,
+              "max_temp": 19.6,
+              "temp_trend": "up"
+            }
+          },
+          {
+            "_id": "05:00:00:00:00:01",
+            "type": "NAModule3",
+            "module_name": "Regn",
+            "battery_percent": 60,
+            "reachable": true,
+            "dashboard_data": {
+              "time_utc": 1791461790,
+              "Rain": 0.1,
+              "sum_rain_1": 0.4,
+              "sum_rain_24": 6.7
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
