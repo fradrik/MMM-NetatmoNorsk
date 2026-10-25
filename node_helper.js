@@ -13,6 +13,7 @@ module.exports = NodeHelper.create({
     this.timer = null;
     this.lastPayload = null;
     this.running = false;
+    this.rainCache = {}; // modul-id -> { at, rainDay, rainWeek }
   },
 
   socketNotificationReceived (notification, payload) {
@@ -45,7 +46,9 @@ module.exports = NodeHelper.create({
         ? netatmo.mockData(__dirname)
         : await netatmo.getStationsData(__dirname, this.config);
 
-      this.lastPayload = { status: "OK", stations: netatmo.normalize(raw), fetchedAt: Date.now() };
+      const stations = netatmo.normalize(raw);
+      if (this.config.rainHistory) await this.addRainHistory(stations);
+      this.lastPayload = { status: "OK", stations, fetchedAt: Date.now() };
       this.sendSocketNotification("NETATMONO_DATA", this.lastPayload);
     } catch (err) {
       Log.error(err.message);
@@ -60,6 +63,30 @@ module.exports = NodeHelper.create({
     }
 
     this.timer = setTimeout(() => this.loop(), delayMs);
+  },
+
+  // Regnhistorikk hentes sjeldnere (standard hvert 30. min) for å spare API-kall.
+  // Feil her skal aldri stoppe resten av modulen.
+  async addRainHistory (stations) {
+    const maxAge = this.config.rainHistoryInterval * 60 * 1000;
+    for (const st of stations) {
+      for (const m of st.modules) {
+        if (m.kind !== "rain" || !m.reachable) continue;
+        const key = m.id || "mock";
+        let c = this.rainCache[key];
+        if (!c || Date.now() - c.at > maxAge) {
+          try {
+            const h = this.config.mockData
+              ? netatmo.mockRainHistory()
+              : await netatmo.getRainHistory(__dirname, this.config, st.id, m.id);
+            c = this.rainCache[key] = { at: Date.now(), rainDay: h.rainDay, rainWeek: h.rainWeek };
+          } catch (err) {
+            Log.warn(`Regnhistorikk: ${err.message}`);
+          }
+        }
+        if (c) { m.rainDay = c.rainDay; m.rainWeek = c.rainWeek; }
+      }
+    }
   },
 
   sendError (message, fatal = false) {

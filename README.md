@@ -72,6 +72,8 @@ I `~/MagicMirror/config/config.js`:
 | `co2Warning` / `co2Alert` | `1000` / `1500` | CO₂-grenser for gul/rød farge (ppm) |
 | `staleMinutes` | `30` | «Målt for X min siden» blir gul etter så lenge |
 | `deviceId` | `""` | MAC til hovedstasjonen, kun hvis du har flere stasjoner og vil vise én |
+| `rainHistory` | `true` | Regn siste døgn og siste 7 dager (hentes fra Netatmos historikk) |
+| `rainHistoryInterval` | `30` | Minutter mellom henting av regnhistorikk |
 | `mockData` | `false` | `true` viser testdata uten Netatmo-konto |
 
 ## Feilsøking

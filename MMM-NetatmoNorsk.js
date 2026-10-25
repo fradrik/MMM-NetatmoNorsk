@@ -19,7 +19,9 @@ Module.register("MMM-NetatmoNorsk", {
     co2Warning: 1000,
     co2Alert: 1500,
     staleMinutes: 30, // marker data som gamle etter så mange minutter
-    showUpdated: true
+    showUpdated: true,
+    rainHistory: true, // vis regn siste døgn og siste 7 dager
+    rainHistoryInterval: 30 // minutter mellom henting av regnhistorikk
   },
 
   getStyles () {
@@ -94,9 +96,13 @@ Module.register("MMM-NetatmoNorsk", {
     }
 
     if (m.kind === "rain") {
-      block.appendChild(el("div", "nn-big medium bright", `${fmt(m.rain24h, 1)} mm`));
-      // sum_rain_24 = døgnsum fra Netatmo, sum_rain_1 = siste time
-      block.appendChild(this.row([["siste time", `${fmt(m.rain1h, 1)} mm`]]));
+      // Stort tall: siste døgn fra historikken, ellers Netatmos døgnsum
+      const day = m.rainDay !== null ? m.rainDay : m.rain24h;
+      block.appendChild(el("div", "nn-big medium bright", `${fmt(day, 1)} mm`));
+      block.appendChild(el("div", "nn-sub xsmall dimmed", "siste døgn"));
+      const rows = [["siste time", `${fmt(m.rain1h, 1)} mm`]];
+      if (m.rainWeek !== null) rows.push(["siste 7 dager", `${fmt(m.rainWeek, 1)} mm`]);
+      block.appendChild(this.row(rows));
       return block;
     }
 

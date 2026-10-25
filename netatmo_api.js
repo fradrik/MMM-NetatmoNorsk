@@ -167,6 +167,69 @@ async function getStationsData (dir, config, retried = false) {
   return json.body;
 }
 
+/* ---------- Regnhistorikk (getmeasure) ---------- */
+
+async function getMeasure (dir, config, params, retried = false) {
+  const token = await getAccessToken(dir, config, retried);
+  const url = new URL(`${API}/api/getmeasure`);
+  Object.keys(params).forEach((k) => url.searchParams.set(k, String(params[k])));
+
+  let res;
+  try {
+    res = await request("GET", url.toString(), { Authorization: `Bearer ${token}` });
+  } catch (e) {
+    throw new NetatmoError(`Nettverksfeil mot Netatmo (historikk): ${e.message}`);
+  }
+  const json = res.json;
+  const errCode = json.error && json.error.code;
+  if ((res.status === 401 || res.status === 403 || errCode === 2 || errCode === 3) && !retried) {
+    return getMeasure(dir, config, params, true);
+  }
+  if (!res.ok || json.error) {
+    const msg = (json.error && json.error.message) || res.statusText;
+    throw new NetatmoError(`Historikkfeil fra Netatmo (${res.status}): ${msg}`);
+  }
+  return json.body;
+}
+
+// Med optimize=false svarer Netatmo { "<tidspunkt>": [verdi], ... }
+function sumMeasure (body) {
+  if (!body || typeof body !== "object") return null;
+  let sum = 0;
+  let found = false;
+  Object.keys(body).forEach((ts) => {
+    const v = Array.isArray(body[ts]) ? body[ts][0] : body[ts];
+    if (typeof v === "number" && isFinite(v)) { sum += v; found = true; }
+  });
+  return found ? Math.round(sum * 10) / 10 : 0;
+}
+
+/**
+ * Henter regn siste 24 timer (sum av timeverdier) og siste 7 dager
+ * (i dag + 6 foregående døgn, døgninndelt etter stasjonens tidssone).
+ */
+async function getRainHistory (dir, config, stationId, rainModuleId) {
+  const now = Math.floor(Date.now() / 1000);
+  const base = { device_id: stationId, module_id: rainModuleId, type: "sum_rain", optimize: "false", real_time: "true" };
+
+  const hours = await getMeasure(dir, config, Object.assign({}, base, { scale: "1hour", date_begin: now - 24 * 3600, date_end: now }));
+  const days = await getMeasure(dir, config, Object.assign({}, base, { scale: "1day", date_begin: now - 7 * 24 * 3600, date_end: now }));
+
+  // Daglige verdier kan inneholde 7 eller 8 døgn avhengig av klokkeslett; behold de 7 nyeste
+  let week = null;
+  if (days && typeof days === "object") {
+    const keys = Object.keys(days).map(Number).sort((a, b) => b - a).slice(0, 7);
+    const trimmed = {};
+    keys.forEach((k) => { trimmed[k] = days[k]; });
+    week = sumMeasure(trimmed);
+  }
+  return { rainDay: sumMeasure(hours), rainWeek: week };
+}
+
+function mockRainHistory () {
+  return { rainDay: 8.2, rainWeek: 31.5 };
+}
+
 function mockData (dir) {
   return JSON.parse(fs.readFileSync(path.join(dir, "sample.json"), "utf8")).body;
 }
@@ -196,6 +259,8 @@ function pickModule (m) {
     rain: num(d.Rain),
     rain1h: num(d.sum_rain_1),
     rain24h: num(d.sum_rain_24),
+    rainDay: null, // fylles fra getmeasure (siste 24 t)
+    rainWeek: null, // fylles fra getmeasure (siste 7 dager)
     wind: num(d.WindStrength),
     gust: num(d.GustStrength),
     windAngle: num(d.WindAngle)
@@ -216,4 +281,4 @@ function normalize (body) {
   }));
 }
 
-module.exports = { getStationsData, refreshAccessToken, hasStoredToken, mockData, normalize, NetatmoError };
+module.exports = { getStationsData, getRainHistory, mockRainHistory, sumMeasure, refreshAccessToken, hasStoredToken, mockData, normalize, NetatmoError };
