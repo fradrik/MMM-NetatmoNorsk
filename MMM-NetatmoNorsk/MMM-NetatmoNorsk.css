@@ -1,0 +1,53 @@
+.netatmo-no .nn-station {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  justify-content: flex-start;
+}
+
+.netatmo-no .nn-block {
+  min-width: 110px;
+  text-align: left;
+}
+
+.netatmo-no .nn-title {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #444;
+  margin-bottom: 4px;
+  padding-bottom: 2px;
+}
+
+.netatmo-no .nn-big {
+  line-height: 1.1;
+  margin-bottom: 2px;
+}
+
+.netatmo-no .nn-table {
+  border-collapse: collapse;
+  line-height: 1.3;
+}
+
+.netatmo-no .nn-label {
+  padding-right: 8px;
+}
+
+.netatmo-no .nn-value {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.netatmo-no .nn-trend {
+  font-size: 0.6em;
+  margin-left: 4px;
+  vertical-align: middle;
+  opacity: 0.7;
+}
+
+.netatmo-no .nn-good { color: #8fd18f; }
+.netatmo-no .nn-warn { color: #e8c35a; }
+.netatmo-no .nn-bad { color: #e86a5a; }
+.netatmo-no .nn-battery { color: #e8c35a; text-transform: none; }
+.netatmo-no .nn-error { color: #e86a5a; max-width: 360px; margin-bottom: 6px; }
+.netatmo-no .nn-updated { margin-top: 6px; }
+.netatmo-no .nn-stale { color: #e8c35a; }
