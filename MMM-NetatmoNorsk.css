@@ -54,5 +54,6 @@
 .netatmo-no .nn-bad { color: #e86a5a; }
 .netatmo-no .nn-battery { color: #e8c35a; text-transform: none; }
 .netatmo-no .nn-error { color: #e86a5a; max-width: 360px; margin-bottom: 6px; }
+.netatmo-no .nn-note { margin-bottom: 6px; }
 .netatmo-no .nn-updated { margin-top: 6px; }
 .netatmo-no .nn-stale { color: #e8c35a; }

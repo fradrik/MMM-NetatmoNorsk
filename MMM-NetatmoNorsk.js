@@ -51,8 +51,16 @@ Module.register("MMM-NetatmoNorsk", {
     }
 
     if (p.status === "ERROR") {
-      root.appendChild(el("div", "nn-error xsmall", `Netatmo: ${p.message}`));
-      if (!p.stations) return root;
+      if (p.temporary && p.stations) {
+        // Midlertidig feil hos Netatmo: behold tallene, vis bare en diskret merknad
+        root.appendChild(el("div", "nn-note xsmall dimmed", "Netatmo svarer ikke akkurat nå. Viser siste kjente tall."));
+      } else if (p.temporary) {
+        root.appendChild(el("div", "nn-note xsmall dimmed", "Netatmo svarer ikke akkurat nå. Prøver igjen om et minutt …"));
+        return root;
+      } else {
+        root.appendChild(el("div", "nn-error xsmall", `Netatmo: ${p.message}`));
+        if (!p.stations) return root;
+      }
     }
 
     p.stations.forEach((st) => {

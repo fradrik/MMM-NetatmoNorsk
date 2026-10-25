@@ -141,7 +141,9 @@ async function getAccessToken (dir, config, force = false) {
 
 /* ---------- Data ---------- */
 
-async function getStationsData (dir, config, retried = false) {
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function getStationsData (dir, config, retried = false, attempt = 1) {
   const token = await getAccessToken(dir, config, retried);
   const url = new URL(`${API}/api/getstationsdata`);
   if (config.deviceId) url.searchParams.set("device_id", config.deviceId);
@@ -158,18 +160,23 @@ async function getStationsData (dir, config, retried = false) {
   // Netatmo: kode 2 = ugyldig token, 3 = utløpt token. Forny én gang og prøv igjen.
   const errCode = json.error && json.error.code;
   if ((res.status === 401 || res.status === 403 || errCode === 2 || errCode === 3) && !retried) {
-    return getStationsData(dir, config, true);
+    return getStationsData(dir, config, true, attempt);
+  }
+  // Netatmo svarer innimellom 503/5xx et øyeblikk. Prøv opptil 3 ganger med litt pause.
+  if (res.status >= 500 && attempt < 3) {
+    await sleep(attempt * 5000);
+    return getStationsData(dir, config, retried, attempt + 1);
   }
   if (!res.ok || json.error) {
     const msg = (json.error && json.error.message) || res.statusText;
-    throw new NetatmoError(`Datafeil fra Netatmo (${res.status}): ${msg}`);
+    const err = new NetatmoError(`Datafeil fra Netatmo (${res.status}): ${msg}`);
+    err.temporary = res.status >= 500;
+    throw err;
   }
   return json.body;
 }
 
 /* ---------- Regnhistorikk (getmeasure) ---------- */
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function getMeasure (dir, config, params, retried = false, attempt = 1) {
   const token = await getAccessToken(dir, config, retried);

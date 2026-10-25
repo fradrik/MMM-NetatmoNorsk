@@ -52,7 +52,7 @@ module.exports = NodeHelper.create({
       this.sendSocketNotification("NETATMONO_DATA", this.lastPayload);
     } catch (err) {
       Log.error(err.message);
-      this.sendError(err.message, err.fatal);
+      this.sendError(err.message, err.fatal, err.temporary);
       if (err.fatal) {
         // Refresh-token er ugyldig; ingen vits å hamre på API-et. Prøv igjen om 30 min
         // i tilfelle brukeren har lagt inn nytt token i config og startet på nytt.
@@ -90,11 +90,12 @@ module.exports = NodeHelper.create({
     }
   },
 
-  sendError (message, fatal = false) {
+  sendError (message, fatal = false, temporary = false) {
     this.sendSocketNotification("NETATMONO_DATA", {
       status: "ERROR",
       message,
       fatal,
+      temporary,
       // behold gamle data på skjermen hvis vi har dem
       stations: this.lastPayload ? this.lastPayload.stations : null,
       fetchedAt: this.lastPayload ? this.lastPayload.fetchedAt : null
