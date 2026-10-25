@@ -96,11 +96,11 @@ Module.register("MMM-NetatmoNorsk", {
     }
 
     if (m.kind === "rain") {
-      // Stort tall: siste døgn fra historikken, ellers Netatmos døgnsum
-      const day = m.rainDay !== null ? m.rainDay : m.rain24h;
-      block.appendChild(el("div", "nn-big medium bright", `${fmt(day, 1)} mm`));
-      block.appendChild(el("div", "nn-sub xsmall dimmed", "siste døgn"));
-      const rows = [["siste time", `${fmt(m.rain1h, 1)} mm`]];
+      // Stort tall: siste time. Under: siste døgn og siste 7 dager
+      block.appendChild(el("div", "nn-big medium bright", `${fmt(m.rain1h, 1)} mm`));
+      block.appendChild(el("div", "nn-sub xsmall dimmed", "siste time"));
+      const day = m.rainDay !== null ? m.rainDay : m.rain24h; // fallback: Netatmos døgnsum
+      const rows = [["siste døgn", `${fmt(day, 1)} mm`]];
       if (m.rainWeek !== null) rows.push(["siste 7 dager", `${fmt(m.rainWeek, 1)} mm`]);
       block.appendChild(this.row(rows));
       return block;
