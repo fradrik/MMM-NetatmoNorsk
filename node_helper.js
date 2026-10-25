@@ -81,7 +81,8 @@ module.exports = NodeHelper.create({
               : await netatmo.getRainHistory(__dirname, this.config, st.id, m.id);
             c = this.rainCache[key] = { at: Date.now(), rainDay: h.rainDay, rainWeek: h.rainWeek };
           } catch (err) {
-            Log.warn(`Regnhistorikk: ${err.message}`);
+            Log.warn(`Regnhistorikk: ${err.message} (prøver igjen ved neste oppdatering)`);
+            if (c) c.at = 0; // behold gamle tall, men hent på nytt neste runde
           }
         }
         if (c) { m.rainDay = c.rainDay; m.rainWeek = c.rainWeek; }

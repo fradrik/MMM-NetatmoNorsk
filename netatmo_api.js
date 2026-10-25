@@ -169,7 +169,9 @@ async function getStationsData (dir, config, retried = false) {
 
 /* ---------- Regnhistorikk (getmeasure) ---------- */
 
-async function getMeasure (dir, config, params, retried = false) {
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function getMeasure (dir, config, params, retried = false, attempt = 1) {
   const token = await getAccessToken(dir, config, retried);
   const url = new URL(`${API}/api/getmeasure`);
   Object.keys(params).forEach((k) => url.searchParams.set(k, String(params[k])));
@@ -183,7 +185,12 @@ async function getMeasure (dir, config, params, retried = false) {
   const json = res.json;
   const errCode = json.error && json.error.code;
   if ((res.status === 401 || res.status === 403 || errCode === 2 || errCode === 3) && !retried) {
-    return getMeasure(dir, config, params, true);
+    return getMeasure(dir, config, params, true, attempt);
+  }
+  // Netatmo svarer innimellom 503/5xx et øyeblikk. Prøv opptil 3 ganger med litt pause.
+  if (res.status >= 500 && attempt < 3) {
+    await sleep(attempt * 5000);
+    return getMeasure(dir, config, params, retried, attempt + 1);
   }
   if (!res.ok || json.error) {
     const msg = (json.error && json.error.message) || res.statusText;
@@ -204,6 +211,14 @@ function sumMeasure (body) {
   return found ? Math.round(sum * 10) / 10 : 0;
 }
 
+function sumNewest (body, count) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+  const keys = Object.keys(body).map(Number).filter(isFinite).sort((a, b) => b - a).slice(0, count);
+  const trimmed = {};
+  keys.forEach((k) => { trimmed[k] = body[k]; });
+  return sumMeasure(trimmed);
+}
+
 /**
  * Henter regn siste 24 timer (sum av timeverdier) og siste 7 dager
  * (i dag + 6 foregående døgn, døgninndelt etter stasjonens tidssone).
@@ -215,15 +230,8 @@ async function getRainHistory (dir, config, stationId, rainModuleId) {
   const hours = await getMeasure(dir, config, Object.assign({}, base, { scale: "1hour", date_begin: now - 24 * 3600, date_end: now }));
   const days = await getMeasure(dir, config, Object.assign({}, base, { scale: "1day", date_begin: now - 7 * 24 * 3600, date_end: now }));
 
-  // Daglige verdier kan inneholde 7 eller 8 døgn avhengig av klokkeslett; behold de 7 nyeste
-  let week = null;
-  if (days && typeof days === "object") {
-    const keys = Object.keys(days).map(Number).sort((a, b) => b - a).slice(0, 7);
-    const trimmed = {};
-    keys.forEach((k) => { trimmed[k] = days[k]; });
-    week = sumMeasure(trimmed);
-  }
-  return { rainDay: sumMeasure(hours), rainWeek: week };
+  // Svaret kan inneholde én verdi for mye i starten av perioden; behold de nyeste
+  return { rainDay: sumNewest(hours, 24), rainWeek: sumNewest(days, 7) };
 }
 
 function mockRainHistory () {
